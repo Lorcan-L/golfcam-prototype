@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Shot Trace Editor v2.2</title>
+    <title>Shot Trace Editor v2.3</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         :root { --ios-blue: #0A84FF; --ios-green: #30D158; --ios-yellow: #FFD60A; --ios-orange: #FF9F0A; }
@@ -156,6 +156,14 @@
 
         .playhead { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #fff; transform: translateX(-50%); z-index: 10; pointer-events: none; box-shadow: 0 0 6px rgba(255,255,255,0.3); transition: left 0.1s linear; }
         .playhead::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid #fff; }
+
+        .trace-track { position: relative; height: 14px; margin: 8px 12px 0; z-index: 15; }
+        .trace-bar { position: absolute; top: 50%; transform: translateY(-50%); height: 4px; background: rgba(48,209,88,0.5); border-radius: 2px; transition: all 0.3s; }
+        .trace-handle { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 0; height: 0; cursor: pointer; z-index: 16; transition: all 0.2s; }
+        .trace-handle.start { border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 10px solid #30D158; }
+        .trace-handle.end { border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 10px solid #30D158; }
+        .trace-handle:active { transform: translate(-50%, -50%) scale(1.2); }
+        .trace-handle.dragging { transform: translate(-50%, -50%) scale(1.3); filter: drop-shadow(0 0 6px rgba(48,209,88,0.6)); }
         
         .bottom-area { background: rgba(10,10,10,0.98); border-top: 0.5px solid rgba(255,255,255,0.06); padding: 12px 16px 20px; position: relative; flex-shrink: 0; }
         
@@ -407,7 +415,12 @@
                     <div class="playhead"></div>
                 </div>
             </div>
-            <div class="version-tag">v2.2</div>
+            <div class="trace-track" id="traceTrack" style="display:none;">
+                <div class="trace-bar" id="traceBar"></div>
+                <div class="trace-handle start" id="traceHandleStart" onclick="handleTraceHandleClick('start')"></div>
+                <div class="trace-handle end" id="traceHandleEnd" onclick="handleTraceHandleClick('end')"></div>
+            </div>
+            <div class="version-tag">v2.3</div>
         </div>
 
         <div class="bottom-area">
@@ -658,6 +671,27 @@
                 e.preventDefault();
                 const cx = e.touches ? e.touches[0].clientX : e.clientX;
                 const cy = e.touches ? e.touches[0].clientY : e.clientY;
+
+                if (state.dragTarget.type.startsWith('trace')) {
+                    const wrap = document.getElementById('timelineWrap');
+                    const wrapRect = wrap.getBoundingClientRect();
+                    const relX = cx - wrapRect.left;
+                    const ratio = Math.max(0, Math.min(1, relX / wrapRect.width));
+                    const newTime = ratio * state.duration;
+
+                    if (state.dragTarget.type === 'traceStart') {
+                        state.startTime = Math.min(newTime, state.endTime - 0.1);
+                    } else {
+                        state.endTime = Math.max(newTime, state.startTime + 0.1);
+                    }
+
+                    updateTimeline();
+                    updateTimeDisplay();
+                    document.getElementById('startChipTime').textContent = formatTime(state.startTime);
+                    document.getElementById('endChipTime').textContent = formatTime(state.endTime);
+                    return;
+                }
+
                 const dx = cx - state.dragTarget.mouseStartX;
                 const dy = cy - state.dragTarget.mouseStartY;
                 let p;
@@ -682,19 +716,29 @@
                 document.getElementById('endMarker').classList.remove('dragging');
                 document.getElementById('handle1').classList.remove('dragging');
                 document.getElementById('handle2').classList.remove('dragging');
+                document.getElementById('traceHandleStart').classList.remove('dragging');
+                document.getElementById('traceHandleEnd').classList.remove('dragging');
                 if (state.dragTarget) {
-                    let p;
-                    if (state.dragTarget.type === 'start') p = state.startPoint;
-                    else if (state.dragTarget.type === 'end') p = state.endPoint;
-                    else if (state.dragTarget.type === 'cp1') p = state.cp1;
-                    else p = state.cp2;
-                    saveHistory('move', {
-                        type: state.dragTarget.type,
-                        oldX: state.dragTarget.startX,
-                        oldY: state.dragTarget.startY,
-                        newX: p.x,
-                        newY: p.y
-                    });
+                    if (state.dragTarget.type.startsWith('trace')) {
+                        saveHistory('moveTime', {
+                            type: state.dragTarget.type,
+                            oldTime: state.dragTarget.startTime,
+                            newTime: state.dragTarget.type === 'traceStart' ? state.startTime : state.endTime
+                        });
+                    } else {
+                        let p;
+                        if (state.dragTarget.type === 'start') p = state.startPoint;
+                        else if (state.dragTarget.type === 'end') p = state.endPoint;
+                        else if (state.dragTarget.type === 'cp1') p = state.cp1;
+                        else p = state.cp2;
+                        saveHistory('move', {
+                            type: state.dragTarget.type,
+                            oldX: state.dragTarget.startX,
+                            oldY: state.dragTarget.startY,
+                            newX: p.x,
+                            newY: p.y
+                        });
+                    }
                 }
                 state.isDragging = false;
                 state.dragTarget = null;
@@ -712,22 +756,32 @@
                 e.stopPropagation();
                 pause();
                 state.isDragging = true;
-                let p;
+                let p, startTimeVal = null;
                 if (type === 'start') p = state.startPoint;
                 else if (type === 'end') p = state.endPoint;
                 else if (type === 'cp1') p = state.cp1;
-                else p = state.cp2;
+                else if (type === 'cp2') p = state.cp2;
+                else if (type === 'traceStart') startTimeVal = state.startTime;
+                else if (type === 'traceEnd') startTimeVal = state.endTime;
+
                 state.dragTarget = {
                     type,
-                    startX: p.x,
-                    startY: p.y,
+                    startX: p ? p.x : 0,
+                    startY: p ? p.y : 0,
+                    startTime: startTimeVal,
                     mouseStartX: e.touches ? e.touches[0].clientX : e.clientX,
                     mouseStartY: e.touches ? e.touches[0].clientY : e.clientY
                 };
-                const elId = type === 'start' ? 'startMarker' :
-                             type === 'end' ? 'endMarker' :
-                             type === 'cp1' ? 'handle1' : 'handle2';
-                document.getElementById(elId).classList.add('dragging');
+
+                if (type.startsWith('trace')) {
+                    const elId = type === 'traceStart' ? 'traceHandleStart' : 'traceHandleEnd';
+                    document.getElementById(elId).classList.add('dragging');
+                } else {
+                    const elId = type === 'start' ? 'startMarker' :
+                                 type === 'end' ? 'endMarker' :
+                                 type === 'cp1' ? 'handle1' : 'handle2';
+                    document.getElementById(elId).classList.add('dragging');
+                }
             };
             
             document.getElementById('startMarker').addEventListener('mousedown', e => { enterEditMode(); state.selectedMarker = 'start'; updateMarkerVisibility(); startDrag(e, 'start'); });
@@ -738,7 +792,12 @@
             document.getElementById('handle1').addEventListener('touchstart', e => { enterEditMode(); startDrag(e, 'cp1'); }, { passive: false });
             document.getElementById('handle2').addEventListener('mousedown', e => { enterEditMode(); startDrag(e, 'cp2'); });
             document.getElementById('handle2').addEventListener('touchstart', e => { enterEditMode(); startDrag(e, 'cp2'); }, { passive: false });
-            
+
+            document.getElementById('traceHandleStart').addEventListener('mousedown', e => { e.stopPropagation(); startDrag(e, 'traceStart'); });
+            document.getElementById('traceHandleStart').addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, 'traceStart'); }, { passive: false });
+            document.getElementById('traceHandleEnd').addEventListener('mousedown', e => { e.stopPropagation(); startDrag(e, 'traceEnd'); });
+            document.getElementById('traceHandleEnd').addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, 'traceEnd'); }, { passive: false });
+
             document.getElementById('traceCanvas').addEventListener('click', () => {
                 if (state.mode === 'hasEnd') {
                     enterEditMode();
@@ -957,7 +1016,42 @@
             const wrapWidth = wrap.clientWidth;
             const playhead = document.querySelector('.playhead');
             if (playhead) playhead.style.left = (p * wrapWidth) + 'px';
+            updateTraceTrack();
         }
+
+        function updateTraceTrack() {
+            const track = document.getElementById('traceTrack');
+            const bar = document.getElementById('traceBar');
+            const hStart = document.getElementById('traceHandleStart');
+            const hEnd = document.getElementById('traceHandleEnd');
+
+            if (state.mode !== 'hasEnd' || state.startTime === null || state.endTime === null) {
+                track.style.display = 'none';
+                return;
+            }
+
+            track.style.display = 'block';
+            const wrap = document.getElementById('timelineWrap');
+            const wrapWidth = wrap.clientWidth;
+            const startP = state.startTime / state.duration;
+            const endP = state.endTime / state.duration;
+            const left = startP * wrapWidth;
+            const width = (endP - startP) * wrapWidth;
+
+            bar.style.left = left + 'px';
+            bar.style.width = width + 'px';
+            hStart.style.left = left + 'px';
+            hEnd.style.left = (left + width) + 'px';
+        }
+
+        function handleTraceHandleClick(type) {
+            if (type === 'start') {
+                jumpToStart();
+            } else {
+                jumpToEnd();
+            }
+        }
+
         function updateTimeDisplay() { document.getElementById('curTime').textContent = formatTime(state.currentTime); }
         function formatTime(s) { const m = Math.floor(s/60), sec = Math.floor(s%60), ms = Math.floor((s%1)*100); return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${String(ms).padStart(2,'0')}`; }
         
@@ -986,10 +1080,12 @@
                 showEndElements();
             } else if (item.action === 'move') {
                 restorePoint(item.data.type, item.data.oldX, item.data.oldY);
+            } else if (item.action === 'moveTime') {
+                restoreTime(item.data.type, item.data.oldTime);
             }
             updateUI();
         }
-        
+
         function redo() {
             if (state.historyIndex >= state.history.length - 1) return;
             state.historyIndex++;
@@ -1008,10 +1104,21 @@
                 removeEnd();
             } else if (item.action === 'move') {
                 restorePoint(item.data.type, item.data.newX, item.data.newY);
+            } else if (item.action === 'moveTime') {
+                restoreTime(item.data.type, item.data.newTime);
             }
             updateUI();
         }
-        
+
+        function restoreTime(type, time) {
+            if (type === 'traceStart') state.startTime = time;
+            else if (type === 'traceEnd') state.endTime = time;
+            updateTimeline();
+            updateTimeDisplay();
+            document.getElementById('startChipTime').textContent = formatTime(state.startTime);
+            document.getElementById('endChipTime').textContent = formatTime(state.endTime);
+        }
+
         function restorePoint(type, x, y) {
             let p;
             if (type === 'start') p = state.startPoint;
