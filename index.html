@@ -92,6 +92,7 @@
             display: none;
             pointer-events: all;
             transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.1);
         }
         .ctrl-handle.visible { display: block; animation: handlePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .ctrl-handle.dragging { transform: translate(-50%, -50%) scale(1.25); border-color: #fff; }
@@ -118,10 +119,11 @@
         .history-btn:active { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.08); }
         .history-btn:disabled { opacity: 0.2; cursor: not-allowed; }
         .history-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .play-btn-wrapper { flex: 1; display: flex; justify-content: center; }
+        .play-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+        .play-btn:active { transform: scale(0.9); }
 
         .timeline-wrapper { display: flex; align-items: center; padding: 0 12px; position: relative; }
-        .play-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; position: absolute; left: 50%; top: -48px; transform: translateX(-50%); z-index: 20; }
-        .play-btn:active { transform: translateX(-50%) scale(0.9); }
         .timeline-track-wrap { flex: 1; position: relative; height: 48px; overflow: hidden; border-radius: 6px; }
         .timeline-track { display: flex; gap: 1px; height: 100%; position: relative; }
         .frame { flex: 1; height: 100%; position: relative; overflow: hidden; opacity: 0.35; transition: opacity 0.2s; border-radius: 2px; }
@@ -129,48 +131,22 @@
         .frame-inner { width: 100%; height: 100%; background: rgba(255,255,255,0.06); border-radius: inherit; }
         .frame.active .frame-inner { background: rgba(255,255,255,0.15); }
 
-        .timeline-dot {
-            position: absolute;
-            top: -4px;
-            bottom: -4px;
-            width: 2px;
-            z-index: 12;
-            pointer-events: none;
-            transition: all 0.3s;
-        }
-        .timeline-dot.start { background: rgba(255,255,255,0.35); box-shadow: 0 0 6px rgba(255,255,255,0.2); }
-        .timeline-dot.end { background: rgba(255,255,255,0.2); box-shadow: 0 0 6px rgba(255,255,255,0.1); }
-        .timeline-dot::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-        }
-        .timeline-dot.start::before { border-top: 5px solid rgba(255,255,255,0.5); }
-        .timeline-dot.end::before { border-top: 5px solid rgba(255,255,255,0.5); }
-
         .playhead { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #fff; transform: translateX(-50%); z-index: 10; pointer-events: none; box-shadow: 0 0 6px rgba(255,255,255,0.3); transition: left 0.1s linear; }
         .playhead::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid #fff; }
 
-        .trace-track { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 15; pointer-events: none; }
-        .trace-bar { position: absolute; top: 50%; transform: translateY(-50%); height: 4px; border-radius: 2px; transition: all 0.1s; }
-        .trace-handle { position: absolute; top: 50%; transform: translate(-50%, -100%); width: 0; height: 0; cursor: pointer; z-index: 16; pointer-events: all; margin-top: -4px; touch-action: none; }
-        .trace-handle.start { border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 10px solid var(--trace-color, #30D158); }
-        .trace-handle.end { border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 10px solid var(--trace-color, #30D158); }
-        .trace-handle:active { transform: translate(-50%, -100%) scale(1.2); }
-        .trace-handle.dragging { transform: translate(-50%, -100%) scale(1.3); filter: drop-shadow(0 0 6px var(--trace-color, #30D158)); }
-        .trace-icon { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; pointer-events: none; }
-        .trace-icon svg { width: 100%; height: 100%; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .trace-icon.start svg { stroke: var(--trace-color, #30D158); }
-        .trace-icon.end svg { stroke: var(--trace-color, #30D158); opacity: 0.7; }
+        .trace-bar { position: absolute; top: 0; left: 0; height: 100%; border-radius: 2px; transition: all 0.1s; z-index: 14; pointer-events: none; }
+        .trace-handle-track { position: relative; height: 32px; margin: 4px 12px 0; z-index: 15; }
+        .trace-handle { position: absolute; top: 0; left: 0; transform: translateX(-50%); width: 32px; height: 32px; cursor: pointer; z-index: 16; pointer-events: all; touch-action: none; display: flex; flex-direction: column; align-items: center; }
+        .trace-handle-bg { width: 20px; height: 20px; background: var(--trace-color, #30D158); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .trace-handle-bg::after { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--trace-color, #30D158); }
+        .trace-handle.end .trace-handle-bg { opacity: 0.7; }
+        .trace-handle.end .trace-handle-bg::after { opacity: 0.7; }
+        .trace-handle:active .trace-handle-bg { transform: scale(1.15); }
+        .trace-handle.dragging .trace-handle-bg { transform: scale(1.25); filter: drop-shadow(0 0 6px var(--trace-color, #30D158)); }
+        .trace-handle-icon { width: 12px; height: 12px; pointer-events: none; position: relative; z-index: 1; }
+        .trace-handle-icon svg { width: 100%; height: 100%; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke: #fff; }
 
-        .timeline-toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 0; min-height: 44px; }
-        .timeline-toolbar .settings-btn { margin-left: auto; }
+        .timeline-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 10px 12px 0; min-height: 44px; }
 
         .add-btn {
             display: none;
@@ -323,11 +299,13 @@
         <div class="timeline-area">
             <div class="timeline-header">
                 <div class="time-display">
-                    <span class="cur" id="curTime">00:00</span>
+                    <span class="cur" id="curTime">00.00</span>
                     <span class="sep">/</span>
-                    <span class="total" id="totalTime">00:05</span>
+                    <span class="total" id="totalTime">05.23</span>
                 </div>
-                <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+                <div class="play-btn-wrapper">
+                    <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+                </div>
                 <div class="history-controls">
                     <button class="history-btn" id="undoBtn" onclick="undo()" disabled>
                         <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
@@ -339,101 +317,35 @@
             </div>
             <div class="timeline-wrapper">
                 <div class="timeline-track-wrap" id="timelineWrap">
-                    <div class="timeline-track" id="timelineTrack">
-                        <div class="timeline-dot start" id="timelineStartDot" style="display:none;"></div>
-                        <div class="timeline-dot end" id="timelineEndDot" style="display:none;"></div>
-                    </div>
+                    <div class="timeline-track" id="timelineTrack"></div>
                     <div class="playhead"></div>
-                    <div class="trace-track" id="traceTrack" style="display:none;">
-                        <div class="trace-bar" id="traceBar"></div>
-                        <div class="trace-handle start" id="traceHandleStart">
-                            <div class="trace-icon start">
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-                            </div>
+                    <div class="trace-bar" id="traceBar" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="trace-handle-track" id="traceHandleTrack" style="display:none;">
+                <div class="trace-handle start" id="traceHandleStart">
+                    <div class="trace-handle-bg">
+                        <div class="trace-handle-icon">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
                         </div>
-                        <div class="trace-handle end" id="traceHandleEnd">
-                            <div class="trace-icon end">
-                                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg>
-                            </div>
+                    </div>
+                </div>
+                <div class="trace-handle end" id="traceHandleEnd">
+                    <div class="trace-handle-bg">
+                        <div class="trace-handle-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="timeline-toolbar">
-                <button class="add-btn add-start" id="addStartBtn" onclick="addStart()">
-                    <span class="add-icon">+</span>
-                    <span>添加击球点</span>
-                </button>
-                <button class="add-btn add-end" id="addEndBtn" onclick="addEnd()">
-                    <span class="add-icon">+</span>
-                    <span>添加落点</span>
-                </button>
                 <button class="settings-btn" id="settingsBtn" onclick="openSettings()">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
             </div>
             <div class="version-tag">v2.4</div>
         </div>
-                <div class="history-controls">
-                    <button class="history-btn" id="undoBtn" onclick="undo()" disabled>
-                        <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-                    </button>
-                    <button class="history-btn" id="redoBtn" onclick="redo()" disabled>
-                        <svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div class="timeline-wrapper">
-                <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
-                <div class="timeline-track-wrap" id="timelineWrap">
-                    <div class="timeline-track" id="timelineTrack">
-                        <div class="timeline-dot start" id="timelineStartDot" style="display:none;"></div>
-                        <div class="timeline-dot end" id="timelineEndDot" style="display:none;"></div>
-                    </div>
-                    <div class="playhead"></div>
-                </div>
-            </div>
-            <div class="trace-track" id="traceTrack" style="display:none;">
-                <div class="trace-bar" id="traceBar"></div>
-                <div class="trace-handle start" id="traceHandleStart" onclick="handleTraceHandleClick('start')"></div>
-                <div class="trace-handle end" id="traceHandleEnd" onclick="handleTraceHandleClick('end')"></div>
-            </div>
-            <div class="version-tag">v2.4</div>
-        </div>
-                    <div class="chip-info">
-                        <span class="chip-label">击球点</span>
-                        <span class="chip-time" id="startChipTime">00:00.00</span>
-                    </div>
-                    <div class="chip-delete" onclick="event.stopPropagation(); deleteStart()">✕</div>
-                </div>
-                
-                <div class="marker-chip end" id="endChip" onclick="handleChipClick('end', event)">
-                    <div class="chip-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg>
-                    </div>
-                    <div class="chip-info">
-                        <span class="chip-label">落点</span>
-                        <span class="chip-time" id="endChipTime">00:00.00</span>
-                    </div>
-                    <div class="chip-delete" onclick="event.stopPropagation(); deleteEnd()">✕</div>
-                </div>
-                
-                <button class="add-btn add-start" id="addStartBtn" onclick="addStart()">
-                    <span class="add-icon">+</span>
-                    <span>击球点</span>
-                </button>
-                
-                <button class="add-btn add-end" id="addEndBtn" onclick="addEnd()">
-                    <span class="add-icon">+</span>
-                    <span>落点</span>
-                </button>
-                
-                <button class="settings-btn" id="settingsBtn" onclick="openSettings()">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
-            </div>
-        </div>
-        
+
         <div class="overlay-backdrop" id="backdrop" onclick="closeSettings()"></div>
         <div class="settings-panel" id="settingsPanel">
             <div class="settings-header">
@@ -506,7 +418,33 @@
             setupCanvas();
             setupDrag();
             document.getElementById('totalTime').textContent = formatTime(state.duration);
+            updateTimeDisplay();
+            createDefaultTrace();
             updateUI();
+        }
+        
+        function createDefaultTrace() {
+            const preview = document.getElementById('previewArea');
+            const rect = preview.getBoundingClientRect();
+            
+            // 创建起始点（默认在 0.5s）
+            state.startTime = 0.5;
+            state.startPoint = { x: rect.width * 0.55, y: rect.height * 0.78 };
+            document.getElementById('startMarker').style.left = state.startPoint.x + 'px';
+            document.getElementById('startMarker').style.top = state.startPoint.y + 'px';
+            document.getElementById('startMarker').classList.add('visible');
+
+            // 创建结束点（默认在视频 70% 处）
+            state.endTime = state.duration * 0.7;
+            state.endPoint = { x: rect.width * 0.75, y: rect.height * 0.45 };
+            document.getElementById('endMarker').style.left = state.endPoint.x + 'px';
+            document.getElementById('endMarker').style.top = state.endPoint.y + 'px';
+            document.getElementById('endMarker').classList.add('visible');
+
+            state.mode = 'hasEnd';
+            updateTraceTrack();
+            draw();
+            updateHandles();
         }
         
         function generateFrames() {
@@ -528,7 +466,6 @@
                 c.width = p.clientWidth;
                 c.height = p.clientHeight;
                 draw();
-                updateDotPositions();
                 updateTimeline();
             });
         }
@@ -592,9 +529,11 @@
             
             if (state.mode === 'hasEnd' && !state.isPlaying) {
                 ctx.save();
-                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([3, 3]);
+                ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+                ctx.shadowColor = 'rgba(0,0,0,0.7)';
+                ctx.shadowBlur = 4;
                 ctx.beginPath();
                 ctx.moveTo(pts.p0.x, pts.p0.y);
                 ctx.lineTo(pts.p1.x, pts.p1.y);
@@ -799,9 +738,6 @@
             document.getElementById('startMarker').style.top = state.startPoint.y + 'px';
             document.getElementById('startMarker').classList.add('visible');
             
-            document.getElementById('timelineStartDot').style.display = 'block';
-            updateDotPositions();
-            
             state.mode = 'hasStart';
             saveHistory('addStart', { startTime: state.startTime, startPoint: { ...state.startPoint } });
             updateUI();
@@ -818,9 +754,6 @@
             document.getElementById('endMarker').style.left = state.endPoint.x + 'px';
             document.getElementById('endMarker').style.top = state.endPoint.y + 'px';
             document.getElementById('endMarker').classList.add('visible');
-            
-            document.getElementById('timelineEndDot').style.display = 'block';
-            updateDotPositions();
             
             state.mode = 'hasEnd';
             saveHistory('addEnd', { endTime: state.endTime, endPoint: { ...state.endPoint } });
@@ -873,11 +806,18 @@
             if (state.isPlaying) {
                 exitEditMode();
                 btn.textContent = '⏸';
+                state.currentTime = 0;
+                updateTimeline();
+                updateTimeDisplay();
                 playInt = setInterval(() => {
                     state.currentTime += 0.033;
                     if (state.currentTime >= state.duration) {
                         state.currentTime = 0;
                         state.isAnimatingCurve = false;
+                        updateTimeline();
+                        updateTimeDisplay();
+                        pause();
+                        return;
                     }
                     
                     if (state.startTime && state.currentTime >= state.startTime && !state.isAnimatingCurve) {
@@ -914,6 +854,9 @@
                 btn.textContent = '▶';
                 clearInterval(playInt);
                 state.isAnimatingCurve = false;
+                state.currentTime = 0;
+                updateTimeline();
+                updateTimeDisplay();
                 updateMarkerVisibility();
                 draw();
             }
@@ -983,17 +926,19 @@
         }
 
         function updateTraceTrack() {
-            const track = document.getElementById('traceTrack');
             const bar = document.getElementById('traceBar');
+            const handleTrack = document.getElementById('traceHandleTrack');
             const hStart = document.getElementById('traceHandleStart');
             const hEnd = document.getElementById('traceHandleEnd');
 
             if (state.mode !== 'hasEnd' || state.startTime === null || state.endTime === null) {
-                track.style.display = 'none';
+                bar.style.display = 'none';
+                handleTrack.style.display = 'none';
                 return;
             }
 
-            track.style.display = 'block';
+            bar.style.display = 'block';
+            handleTrack.style.display = 'block';
             const wrap = document.getElementById('timelineWrap');
             const wrapWidth = wrap.clientWidth;
             const startP = state.startTime / state.duration;
@@ -1006,8 +951,6 @@
             bar.style.background = hexToRgba(state.curveColor, 0.5);
             hStart.style.left = left + 'px';
             hEnd.style.left = (left + width) + 'px';
-            hStart.style.borderBottomColor = state.curveColor;
-            hEnd.style.borderBottomColor = state.curveColor;
 
             document.documentElement.style.setProperty('--trace-color', state.curveColor);
         }
@@ -1028,7 +971,7 @@
         }
 
         function updateTimeDisplay() { document.getElementById('curTime').textContent = formatTime(state.currentTime); }
-        function formatTime(s) { const m = Math.floor(s/60), sec = Math.floor(s%60), ms = Math.floor((s%1)*100); if (m >= 60) { const h = Math.floor(m/60); const min = m % 60; return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; } return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${String(ms).padStart(2,'0')}`; }
+        function formatTime(s) { const sec = Math.floor(s%60), ms = Math.floor((s%1)*100); return `${String(sec).padStart(2,'0')}.${String(ms).padStart(2,'0')}`; }
         
         function saveHistory(action, data) {
             state.history = state.history.slice(0, state.historyIndex + 1);
@@ -1279,20 +1222,6 @@
             const hasEnd = state.endPoint !== null;
             const canUndo = state.historyIndex >= 0;
             const canRedo = state.historyIndex < state.history.length - 1;
-            
-            const addStartBtn = document.getElementById('addStartBtn');
-            const addEndBtn = document.getElementById('addEndBtn');
-            
-            if (!hasStart) {
-                addStartBtn.classList.add('visible');
-                addEndBtn.classList.remove('visible');
-            } else if (!hasEnd) {
-                addStartBtn.classList.remove('visible');
-                addEndBtn.classList.add('visible');
-            } else {
-                addStartBtn.classList.remove('visible');
-                addEndBtn.classList.remove('visible');
-            }
             
             document.getElementById('undoBtn').disabled = !canUndo;
             document.getElementById('redoBtn').disabled = !canRedo;
