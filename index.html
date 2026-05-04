@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Shot Trace Editor</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Shot Trace Editor v2.1</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         :root { --ios-blue: #0A84FF; --ios-green: #30D158; --ios-yellow: #FFD60A; --ios-orange: #FF9F0A; }
@@ -96,7 +99,15 @@
         .ctrl-handle.edit-mode { opacity: 1; border-color: rgba(255,255,255,0.8); }
         @keyframes handlePop { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
         
-        .timeline-area { background: rgba(15,15,15,0.98); backdrop-filter: blur(24px); padding: 10px 0 12px; border-top: 0.5px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+        .timeline-area { background: rgba(15,15,15,0.98); backdrop-filter: blur(24px); padding: 10px 0 12px; border-top: 0.5px solid rgba(255,255,255,0.08); flex-shrink: 0; position: relative; }
+        .version-tag { position: absolute;    right: 8px;
+            bottom: 2px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.25);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+        }
         .timeline-header { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; margin-bottom: 8px; }
         .time-display { font-size: 13px; font-weight: 500; letter-spacing: 0.01em; }
         .time-display .cur { color: #fff; }
@@ -396,8 +407,9 @@
                     <div class="playhead"></div>
                 </div>
             </div>
+            <div class="version-tag">v2.1</div>
         </div>
-        
+
         <div class="bottom-area">
             <div class="bottom-controls">
                 <div class="marker-chip start" id="startChip" onclick="handleChipClick('start', event)">
